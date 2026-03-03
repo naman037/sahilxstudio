@@ -1,61 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import { IMAGES, WORKS, SERVICES } from '../data'
-
-// ═══════════════════════════════════════════════
-// CUSTOM CURSOR
-// ═══════════════════════════════════════════════
-function CustomCursor() {
-  const dotRef = useRef(null)
-  const ringRef = useRef(null)
-  const pos = useRef({ x: 0, y: 0 })
-  const ringPos = useRef({ x: 0, y: 0 })
-  const raf = useRef(null)
-
-  useEffect(() => {
-    const handleMove = (e) => {
-      pos.current = { x: e.clientX, y: e.clientY }
-      if (dotRef.current) {
-        dotRef.current.style.left = `${e.clientX}px`
-        dotRef.current.style.top = `${e.clientY}px`
-      }
-    }
-
-    const loop = () => {
-      if (ringRef.current) {
-        ringPos.current.x += (pos.current.x - ringPos.current.x) * 0.12
-        ringPos.current.y += (pos.current.y - ringPos.current.y) * 0.12
-        ringRef.current.style.left = `${ringPos.current.x}px`
-        ringRef.current.style.top = `${ringPos.current.y}px`
-      }
-      raf.current = requestAnimationFrame(loop)
-    }
-
-    const handleHoverIn = () => ringRef.current?.classList.add('hovering')
-    const handleHoverOut = () => ringRef.current?.classList.remove('hovering')
-
-    document.addEventListener('mousemove', handleMove)
-    document.querySelectorAll('a, button, .work-item, .magnetic-btn').forEach(el => {
-      el.addEventListener('mouseenter', handleHoverIn)
-      el.addEventListener('mouseleave', handleHoverOut)
-    })
-
-    loop()
-    return () => {
-      document.removeEventListener('mousemove', handleMove)
-      cancelAnimationFrame(raf.current)
-    }
-  }, [])
-
-  return (
-    <>
-      <div id="cursor-dot" ref={dotRef} />
-      <div id="cursor-ring" ref={ringRef} />
-    </>
-  )
-}
 
 // ═══════════════════════════════════════════════
 // SCRAMBLE TEXT HOOK
@@ -71,7 +18,7 @@ function useScramble(originalText, trigger) {
     }
     let iteration = 0
     const interval = setInterval(() => {
-      setText(prev =>
+      setText(
         originalText.split('').map((char, idx) => {
           if (char === ' ') return ' '
           if (idx < iteration) return originalText[idx]
@@ -85,6 +32,180 @@ function useScramble(originalText, trigger) {
   }, [trigger, originalText])
 
   return text
+}
+
+// ═══════════════════════════════════════════════
+// SVG CHARACTER — PHOTOGRAPHER (Left)
+// ═══════════════════════════════════════════════
+function PhotographerCharacter() {
+  const [lightHovered, setLightHovered] = useState(false)
+  const [cameraHovered, setCameraHovered] = useState(false)
+
+  return (
+    <div className="hero-character-photographer">
+      <svg viewBox="0 0 280 480" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+        {/* Studio Light on tripod */}
+        <g
+          className="studio-light-element"
+          onMouseEnter={() => setLightHovered(true)}
+          onMouseLeave={() => setLightHovered(false)}
+          style={{ cursor: 'none' }}
+        >
+          {/* Tripod legs */}
+          <line x1="55" y1="280" x2="30" y2="440" stroke="#3a3a3a" strokeWidth="2" />
+          <line x1="55" y1="280" x2="55" y2="445" stroke="#3a3a3a" strokeWidth="2" />
+          <line x1="55" y1="280" x2="80" y2="440" stroke="#3a3a3a" strokeWidth="2" />
+          {/* Light head */}
+          <rect x="35" y="250" width="40" height="30" rx="3" fill="#2a2a2a" stroke="#444" strokeWidth="1" />
+          {/* Light bulb / glow */}
+          <rect
+            className="light-bulb"
+            x="38" y="253" width="34" height="24" rx="2"
+            fill={lightHovered ? '#fff8e0' : '#1a1a1a'}
+            opacity={lightHovered ? 1 : 0.3}
+            style={{ transition: 'fill 0.4s, opacity 0.4s' }}
+          />
+          {/* Light glow effect */}
+          {lightHovered && (
+            <ellipse cx="55" cy="265" rx="60" ry="80" fill="rgba(255,248,200,0.06)" />
+          )}
+        </g>
+
+        {/* Character body — photographer silhouette */}
+        <g style={{ animation: 'idleBreathe 3.5s ease-in-out infinite', transformOrigin: '160px 460px' }}>
+          {/* Legs */}
+          <path d="M145 380 L135 475" stroke="#1a1a1a" strokeWidth="12" strokeLinecap="round" />
+          <path d="M165 380 L178 475" stroke="#1a1a1a" strokeWidth="12" strokeLinecap="round" />
+          {/* Shoes */}
+          <ellipse cx="132" cy="476" rx="14" ry="5" fill="#111" />
+          <ellipse cx="181" cy="476" rx="14" ry="5" fill="#111" />
+          {/* Body */}
+          <path d="M130 260 C125 310, 125 360, 145 380 L165 380 C185 360, 185 310, 180 260 Z" fill="#1a1a1a" />
+          {/* Jacket detail */}
+          <line x1="155" y1="265" x2="155" y2="370" stroke="#252525" strokeWidth="1" />
+          {/* Belt */}
+          <rect x="133" y="345" width="44" height="6" rx="2" fill="#222" />
+          <rect x="152" y="344" width="8" height="8" rx="1" fill="#333" />
+          {/* Neck */}
+          <rect x="147" y="240" width="16" height="22" rx="4" fill="#2a2a2a" />
+          {/* Head */}
+          <ellipse cx="155" cy="225" rx="22" ry="26" fill="#1e1e1e" />
+          {/* Beanie / cap */}
+          <path d="M133 220 Q135 195, 155 192 Q175 195, 177 220" fill="#e03000" />
+          <rect x="132" y="218" width="46" height="6" rx="2" fill="#c02800" />
+          {/* Eye glint */}
+          <circle cx="148" cy="226" r="2" fill="#555" />
+          <circle cx="164" cy="226" r="2" fill="#555" />
+
+          {/* Arms holding camera */}
+          {/* Left arm - supporting camera */}
+          <path d="M130 270 Q110 290, 115 310 Q118 320, 130 315" stroke="#1a1a1a" strokeWidth="10" strokeLinecap="round" fill="none" />
+          {/* Right arm - pressing shutter */}
+          <path d="M180 270 Q200 285, 195 310 Q192 325, 180 320" stroke="#1a1a1a" strokeWidth="10" strokeLinecap="round" fill="none" />
+
+          {/* Camera body */}
+          <g
+            className="camera-element"
+            onMouseEnter={() => setCameraHovered(true)}
+            onMouseLeave={() => setCameraHovered(false)}
+            style={{ cursor: 'none' }}
+          >
+            <rect x="120" y="295" width="70" height="40" rx="4" fill="#222" stroke="#333" strokeWidth="1" />
+            {/* Viewfinder */}
+            <rect x="140" y="288" width="20" height="10" rx="2" fill="#282828" />
+            {/* Lens barrel */}
+            <circle cx="155" cy="315" r="16" fill="#1a1a1a" stroke="#333" strokeWidth="1.5" />
+            <circle cx="155" cy="315" r="11" fill="#111" stroke="#2a2a2a" strokeWidth="1" />
+            <circle cx="155" cy="315" r="7" fill="#0a0a0a" />
+            {/* Lens glass */}
+            <circle cx="155" cy="315" r="5" fill="#151520" />
+            {/* Lens shine */}
+            <circle
+              className="lens-shine"
+              cx="152" cy="312" r="3"
+              fill="rgba(150,200,255,0.6)"
+              opacity={cameraHovered ? 1 : 0}
+              style={{ transition: 'opacity 0.3s' }}
+            />
+            {cameraHovered && (
+              <circle cx="155" cy="315" r="18" fill="none" stroke="rgba(100,180,255,0.15)" strokeWidth="2" />
+            )}
+            {/* Shutter button */}
+            <circle cx="175" cy="296" r="4" fill="#333" />
+            {/* Flash hotshoe */}
+            <rect x="147" y="286" width="16" height="3" rx="1" fill="#2a2a2a" />
+          </g>
+        </g>
+
+        {/* Gear bag strap */}
+        <path d="M172 268 Q195 300, 200 370 Q202 400, 195 430" stroke="#282828" strokeWidth="4" fill="none" strokeLinecap="round" />
+        <rect x="188" y="420" width="22" height="35" rx="4" fill="#1a1a1a" stroke="#252525" strokeWidth="1" />
+      </svg>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════
+// SVG CHARACTER — MODEL (Right)
+// ═══════════════════════════════════════════════
+function ModelCharacter() {
+  return (
+    <div className="hero-character-model">
+      <svg viewBox="0 0 260 460" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
+        <g style={{ animation: 'idleBreathe 4s ease-in-out infinite', transformOrigin: '130px 440px' }}>
+          {/* Legs — natural pose, weight on one leg */}
+          <path d="M120 360 L110 455" stroke="#1a1a1a" strokeWidth="10" strokeLinecap="round" />
+          <path d="M145 360 L160 450" stroke="#1a1a1a" strokeWidth="10" strokeLinecap="round" />
+          {/* Heels */}
+          <path d="M105 453 L100 458 L118 458 L115 453" fill="#1a1a1a" />
+          <path d="M155 448 L152 458 L170 458 L165 448" fill="#1a1a1a" />
+
+          {/* Body — elegant, slight S-curve pose */}
+          <path d="M110 235 C105 270, 105 320, 120 360 L145 360 C160 320, 162 270, 155 235 Z" fill="#1a1a1a" />
+
+          {/* Dress/outfit detail — fitted silhouette */}
+          <path d="M112 280 Q130 275, 153 280" stroke="#222" strokeWidth="0.5" fill="none" />
+          <path d="M115 310 Q130 305, 150 310" stroke="#222" strokeWidth="0.5" fill="none" />
+
+          {/* Waist accent */}
+          <path d="M114 290 Q132 285, 152 290" stroke="var(--accent)" strokeWidth="1.5" opacity="0.3" fill="none" />
+
+          {/* Neck */}
+          <rect x="126" y="215" width="12" height="22" rx="4" fill="#2a2a2a" />
+
+          {/* Head */}
+          <ellipse cx="132" cy="200" rx="20" ry="24" fill="#1e1e1e" />
+
+          {/* Hair — flowing */}
+          <path d="M112 195 Q110 170, 120 160 Q132 152, 145 160 Q155 170, 152 195" fill="#111" />
+          <path d="M112 195 Q105 220, 100 250" stroke="#111" strokeWidth="8" fill="none" strokeLinecap="round" />
+          <path d="M152 195 Q158 215, 162 240" stroke="#111" strokeWidth="6" fill="none" strokeLinecap="round" />
+
+          {/* Face details */}
+          <circle cx="126" cy="200" r="1.5" fill="#555" />
+          <circle cx="140" cy="200" r="1.5" fill="#555" />
+          <path d="M128 208 Q133 212, 138 208" stroke="#333" strokeWidth="0.8" fill="none" />
+
+          {/* Left arm — resting on hip */}
+          <path d="M110 245 Q95 275, 100 300 Q105 310, 112 305" stroke="#1a1a1a" strokeWidth="8" strokeLinecap="round" fill="none" />
+
+          {/* Right arm — relaxed at side */}
+          <path d="M155 245 Q170 280, 168 320 Q167 340, 163 355" stroke="#1a1a1a" strokeWidth="8" strokeLinecap="round" fill="none" />
+
+          {/* Hand details */}
+          <circle cx="100" cy="303" r="5" fill="#1a1a1a" />
+          <circle cx="163" cy="357" r="5" fill="#1a1a1a" />
+
+          {/* Earring */}
+          <circle cx="113" cy="205" r="2" fill="var(--accent)" opacity="0.5" />
+
+          {/* Subtle necklace */}
+          <path d="M122 232 Q132 240, 142 232" stroke="#333" strokeWidth="0.8" fill="none" />
+          <circle cx="132" cy="239" r="2" fill="#333" />
+        </g>
+      </svg>
+    </div>
+  )
 }
 
 // ═══════════════════════════════════════════════
@@ -127,7 +248,7 @@ function Nav() {
 }
 
 // ═══════════════════════════════════════════════
-// HERO SECTION
+// HERO SECTION — CINEMATIC WITH CHARACTERS
 // ═══════════════════════════════════════════════
 function Hero() {
   const heroRef = useRef(null)
@@ -141,8 +262,8 @@ function Hero() {
     mouseY.set((e.clientY - rect.top - rect.height / 2) / rect.height)
   }, [mouseX, mouseY])
 
-  const tx = useSpring(useTransform(mouseX, [-0.5, 0.5], [-20, 20]), { stiffness: 100, damping: 30 })
-  const ty = useSpring(useTransform(mouseY, [-0.5, 0.5], [-10, 10]), { stiffness: 100, damping: 30 })
+  const tx = useSpring(useTransform(mouseX, [-0.5, 0.5], [-15, 15]), { stiffness: 100, damping: 30 })
+  const ty = useSpring(useTransform(mouseY, [-0.5, 0.5], [-8, 8]), { stiffness: 100, damping: 30 })
   const tx2 = useSpring(useTransform(mouseX, [-0.5, 0.5], [20, -20]), { stiffness: 60, damping: 20 })
   const ty2 = useSpring(useTransform(mouseY, [-0.5, 0.5], [10, -10]), { stiffness: 60, damping: 20 })
 
@@ -153,7 +274,7 @@ function Hero() {
 
   return (
     <section className="hero" ref={heroRef} onMouseMove={handleMouseMove}>
-      {/* Grid BG */}
+      {/* Image grid background */}
       <motion.div className="hero-bg-grid" style={{ x: tx2, y: ty2 }}>
         {heroImages.map((img, i) => (
           <div key={i} style={{ overflow: 'hidden', position: 'relative' }}>
@@ -169,21 +290,23 @@ function Hero() {
         ))}
       </motion.div>
 
-      {/* Overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(to bottom, rgba(5,5,5,0.45) 0%, rgba(5,5,5,0.65) 50%, rgba(5,5,5,0.92) 100%)',
-        zIndex: 1,
-      }} />
+      {/* Cinematic overlay on top of images */}
+      <div className="hero-cinematic-bg" />
 
-      {/* Scan line */}
-      <motion.div
-        style={{
-          position: 'absolute', inset: 0, zIndex: 2,
-          background: 'linear-gradient(to bottom, transparent 90%, rgba(224,48,0,0.05) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Light beams */}
+      <div className="hero-light-beam" />
+      <div className="hero-light-beam" />
+      <div className="hero-light-beam" />
+
+      {/* Characters */}
+      <div className="hero-characters">
+        <PhotographerCharacter />
+        <ModelCharacter />
+      </div>
+
+      {/* Floor shadows */}
+      <div className="hero-floor-shadow left" />
+      <div className="hero-floor-shadow right" />
 
       {/* Title */}
       <div className="hero-content" style={{ zIndex: 10 }}>
@@ -323,7 +446,6 @@ function Manifesto() {
   const [visible, setVisible] = useState(false)
 
   const fullText = "HI I'M SAHIL SINGH A PASSIONATE CINEMATOGRAPHER AND PHOTOGRAPHER BASED IN JODHPUR INDIA"
-
   const words = fullText.split(' ')
 
   useEffect(() => {
@@ -409,7 +531,7 @@ function Stats() {
 }
 
 // ═══════════════════════════════════════════════
-// THE VAULT — WORKS
+// THE VAULT — WORKS WITH 3D SCROLL
 // ═══════════════════════════════════════════════
 function Vault() {
   const [previewImg, setPreviewImg] = useState(null)
@@ -419,6 +541,15 @@ function Vault() {
   const mouseRef = useRef({ x: 0, y: 0 })
   const raf = useRef(null)
   const previewPosRef = useRef({ x: 0, y: 0 })
+  const sectionRef = useRef(null)
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ['start end', 'end start']
+  })
+
+  const perspective3D = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [8, 0, 0, -5])
+  const depthScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.96, 1, 0.98])
 
   useEffect(() => {
     const handleMove = (e) => {
@@ -444,7 +575,7 @@ function Vault() {
   }, [])
 
   return (
-    <section className="vault" id="work">
+    <section className="vault" id="work" ref={sectionRef}>
       {/* Floating preview */}
       <div
         ref={previewRef}
@@ -467,12 +598,19 @@ function Vault() {
         <div className="vault-count">({WORKS.length} projects)</div>
       </div>
 
-      <div className="works-list">
+      <motion.div
+        className="works-list"
+        style={{
+          rotateX: perspective3D,
+          scale: depthScale,
+        }}
+      >
         {WORKS.map((work, i) => (
           <WorkItem
             key={work.id}
             work={work}
             index={i}
+            scrollProgress={scrollYProgress}
             onHover={(img, name) => {
               setPreviewImg(img)
               setPreviewName(name)
@@ -481,19 +619,37 @@ function Vault() {
             onLeave={() => setPreviewVisible(false)}
           />
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }
 
-function WorkItem({ work, index, onHover, onLeave }) {
+function WorkItem({ work, index, scrollProgress, onHover, onLeave }) {
   const [hovered, setHovered] = useState(false)
   const scrambled = useScramble(work.name, hovered)
+  const ref = useRef(null)
+
+  const itemOffset = index * 0.04
+  const itemZ = useTransform(
+    scrollProgress,
+    [0.1 + itemOffset, 0.4 + itemOffset, 0.6 + itemOffset],
+    [30, 0, -20]
+  )
+  const itemOpacity = useTransform(
+    scrollProgress,
+    [0.05 + itemOffset, 0.2 + itemOffset, 0.8],
+    [0.5, 1, 0.9]
+  )
 
   return (
     <Link to={`/project/${work.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <motion.div
+        ref={ref}
         className="work-item"
+        style={{
+          translateZ: itemZ,
+          opacity: itemOpacity,
+        }}
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -517,7 +673,7 @@ function WorkItem({ work, index, onHover, onLeave }) {
 }
 
 // ═══════════════════════════════════════════════
-// GALLERY SCROLL
+// GALLERY SCROLL — ENHANCED
 // ═══════════════════════════════════════════════
 function GalleryScroll() {
   const allImages = [
@@ -539,7 +695,6 @@ function GalleryScroll() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: i * 0.05 }}
-              whileHover={{ scale: 1.02 }}
             >
               <img src={img} alt={`Gallery ${i + 1}`} loading="lazy" />
               <div className="h-scroll-card-info">
@@ -550,6 +705,77 @@ function GalleryScroll() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ═══════════════════════════════════════════════
+// BUSINESS CARD — 3D FLIP
+// ═══════════════════════════════════════════════
+function BusinessCard() {
+  const [isFlipped, setIsFlipped] = useState(false)
+
+  return (
+    <section className="business-card-section">
+      <div className={`business-card-bg ${isFlipped ? 'flipped' : ''}`} />
+
+      <div className="section-label" style={{ zIndex: 1 }}>Business Card</div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        style={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      >
+        <div
+          className="business-card-container"
+          onClick={() => setIsFlipped(!isFlipped)}
+        >
+          <div className={`business-card-inner ${isFlipped ? 'flipped' : ''}`}>
+            {/* Front */}
+            <div className="business-card-front">
+              <div className="card-front-header">
+                <div>
+                  <div className="card-name">Sahil<br />Singh</div>
+                  <div className="card-title-role">Cinematographer &amp; Photographer</div>
+                </div>
+                <div className="card-logo-small">SXS</div>
+              </div>
+
+              <div>
+                <div className="card-front-line" />
+                <div className="card-contact-info">
+                  <div className="card-contact-item">
+                    <svg className="card-contact-icon" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg>
+                    +91 89208 66483
+                  </div>
+                  <div className="card-contact-item">
+                    <svg className="card-contact-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
+                    sahilsingh25sam@gmail.com
+                  </div>
+                  <div className="card-contact-item">
+                    <svg className="card-contact-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>
+                    Jodhpur, Rajasthan, India
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Back */}
+            <div className="business-card-back">
+              <div className="card-back-logo">
+                SAHIL<br />×<br />STUDIOS
+              </div>
+              <div className="card-back-line" />
+              <div className="card-back-tagline">Cinematography &amp; Photography</div>
+              <div className="card-back-website">sahilxstudios.com</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="business-card-hint">Click to flip</div>
+      </motion.div>
+    </section>
   )
 }
 
@@ -626,7 +852,7 @@ function Services() {
           </motion.div>
         ))}
       </motion.div>
-    </section >
+    </section>
   )
 }
 
@@ -669,7 +895,6 @@ function Contact() {
   const handleEmailClick = (e) => {
     e.preventDefault()
 
-    // CONFETTI EXPLOSION
     const duration = 3000
     const end = Date.now() + duration
     const colors = ['#e03000', '#ff6b00', '#f0ece4', '#050505']
@@ -695,7 +920,6 @@ function Contact() {
     }
     frame()
 
-    // Open email after short delay
     setTimeout(() => {
       window.location.href = 'mailto:sahilsingh25sam@gmail.com'
     }, 400)
@@ -791,6 +1015,7 @@ export default function Home() {
       <GalleryScroll />
       <Marquee items={['Assistant Director', 'Color Grading', 'Digital Storytelling', 'Event Coverage', 'Post Production']} reverse />
       <Services />
+      <BusinessCard />
       <Contact />
     </motion.main>
   )

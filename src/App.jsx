@@ -4,7 +4,6 @@ import { AnimatePresence } from 'framer-motion'
 import Lenis from 'lenis'
 
 import Loader from './components/Loader'
-import CharacterGraphic from './components/CharacterGraphic'
 import Home from './pages/Home'
 import ProjectDetail from './pages/ProjectDetail'
 import ServiceDetail from './pages/ServiceDetail'
@@ -16,10 +15,9 @@ import CustomCursor from './components/CustomCursor'
 // GLOBAL LAYOUT (Cursor & Lenis)
 // ═══════════════════════════════════════════════
 function Layout({ children }) {
-  // We handle lenis here to refresh it on route change if needed
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.4,
+      duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     })
@@ -36,7 +34,6 @@ function Layout({ children }) {
     <>
       <div className="grain-overlay" />
       <CustomCursor />
-      <CharacterGraphic />
       {children}
     </>
   )
@@ -68,7 +65,7 @@ export default function App() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 2200)
+    const timer = setTimeout(() => setLoaded(true), 1800)
     return () => clearTimeout(timer)
   }, [])
 

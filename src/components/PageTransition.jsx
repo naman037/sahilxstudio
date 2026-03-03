@@ -9,58 +9,37 @@ export default function PageTransition() {
     // Trigger animation on route change
     useEffect(() => {
         setIsPresent(true)
-        const t = setTimeout(() => setIsPresent(false), 1200)
+        const t = setTimeout(() => setIsPresent(false), 1000)
         return () => clearTimeout(t)
     }, [location.pathname])
 
-    // Generate chaotic paths
-    const paths = useMemo(() => {
-        const arr = []
-        for (let p = 0; p < 3; p++) {
-            let d = `M ${Math.random() * 100} ${Math.random() * 100}`
-            for (let i = 0; i < 400; i++) {
-                d += ` L ${Math.random() * 100} ${Math.random() * 100}`
-            }
-            arr.push(d)
-        }
-        return arr
-    }, [])
+    // 5 horizontal bars for smooth curtain wipe
+    const bars = [0, 1, 2, 3, 4]
 
     return (
         <AnimatePresence>
             {isPresent && (
                 <motion.div
                     key="transition"
-                    style={{
-                        position: 'fixed', inset: 0, zIndex: 9999,
-                        pointerEvents: 'none',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}
+                    className="page-transition-overlay"
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.6, ease: 'easeInOut' }}
+                    transition={{ duration: 0.3, delay: 0.7 }}
                 >
-                    <svg
-                        width="100%"
-                        height="100%"
-                        viewBox="0 0 100 100"
-                        preserveAspectRatio="none"
-                        style={{ position: 'absolute', inset: 0 }}
-                    >
-                        {paths.map((d, i) => (
-                            <motion.path
-                                key={i}
-                                d={d}
-                                fill="none"
-                                stroke="var(--black)"
-                                strokeWidth="1.5"
-                                vectorEffect="non-scaling-stroke"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: 1 }}
-                                transition={{ duration: 0.6, ease: "linear" }}
-                            />
-                        ))}
-                    </svg>
+                    {bars.map((i) => (
+                        <motion.div
+                            key={i}
+                            className="page-transition-bar"
+                            initial={{ scaleY: 1 }}
+                            animate={{ scaleY: 0 }}
+                            transition={{
+                                duration: 0.6,
+                                ease: [0.76, 0, 0.24, 1],
+                                delay: 0.15 + i * 0.06,
+                            }}
+                            style={{ transformOrigin: i % 2 === 0 ? 'top' : 'bottom' }}
+                        />
+                    ))}
                 </motion.div>
             )}
         </AnimatePresence>
