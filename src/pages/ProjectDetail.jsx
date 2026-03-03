@@ -17,9 +17,11 @@ export default function ProjectDetail() {
     return (
         <motion.main
             className="project-detail"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{ transformOrigin: 'center center' }}
         >
             <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, padding: '32px 40px', zIndex: 100, display: 'flex', justifyContent: 'space-between' }}>
                 <Link to="/" style={{ fontFamily: 'Anton, sans-serif', color: 'var(--white)', textDecoration: 'none', fontSize: '24px' }}>SXS</Link>
@@ -31,7 +33,7 @@ export default function ProjectDetail() {
                     style={{ fontFamily: 'Anton, sans-serif', fontSize: 'clamp(60px, 12vw, 180px)', lineHeight: 0.85, textTransform: 'uppercase', marginBottom: '24px' }}
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 1, delay: 0.2 }}
+                    transition={{ duration: 1, delay: 0.3 }}
                 >
                     {project.name}
                 </motion.h1>
@@ -40,7 +42,7 @@ export default function ProjectDetail() {
                     style={{ display: 'flex', gap: '40px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '32px', marginBottom: '80px', flexWrap: 'wrap' }}
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 1, delay: 0.4 }}
+                    transition={{ duration: 1, delay: 0.5 }}
                 >
                     <div>
                         <div style={{ fontSize: '10px', fontFamily: 'Space Mono', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '8px' }}>Role</div>

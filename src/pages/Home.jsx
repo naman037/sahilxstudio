@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import { IMAGES, WORKS, SERVICES } from '../data'
+import { useTransition } from '../components/PageTransition'
 
 // ═══════════════════════════════════════════════
 // SCRAMBLE TEXT HOOK
@@ -628,6 +629,8 @@ function WorkItem({ work, index, scrollProgress, onHover, onLeave }) {
   const [hovered, setHovered] = useState(false)
   const scrambled = useScramble(work.name, hovered)
   const ref = useRef(null)
+  const nav = useNavigate()
+  const transition = useTransition()
 
   const itemOffset = index * 0.04
   const itemZ = useTransform(
@@ -641,8 +644,15 @@ function WorkItem({ work, index, scrollProgress, onHover, onLeave }) {
     [0.5, 1, 0.9]
   )
 
+  const handleClick = (e) => {
+    e.preventDefault()
+    if (transition) {
+      transition.startTransition(work.name, work.img, `/project/${work.id}`, nav)
+    }
+  }
+
   return (
-    <Link to={`/project/${work.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+    <a href={`/project/${work.id}`} onClick={handleClick} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <motion.div
         ref={ref}
         className="work-item"
@@ -668,7 +678,7 @@ function WorkItem({ work, index, scrollProgress, onHover, onLeave }) {
         <span className="work-type">{work.type}</span>
         <span className="work-year">{work.year}</span>
       </motion.div>
-    </Link>
+    </a>
   )
 }
 
