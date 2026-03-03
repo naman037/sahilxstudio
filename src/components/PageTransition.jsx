@@ -260,7 +260,7 @@ function ChaoticTransition() {
                 // After build + hold, start fade out
                 if (frame >= buildFrames + holdFrames) {
                     fadeOutStarted = true
-                    setPhase('exit')
+                    // Removed setPhase('exit') to prevent the useEffect from restarting
                 }
             }
 
@@ -308,7 +308,7 @@ function ChaoticTransition() {
             animRef.current = requestAnimationFrame(render)
         }
 
-        if (phase === 'enter') {
+        if (phase !== 'idle') {
             animRef.current = requestAnimationFrame(render)
         }
 

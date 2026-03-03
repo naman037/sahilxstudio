@@ -1,10 +1,20 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { WORKS, IMAGES } from '../data'
 
 export default function ProjectDetail() {
     const { id } = useParams()
+    const navigate = useNavigate()
     const project = WORKS.find(w => w.id === id) || WORKS[0]
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') navigate('/')
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [navigate])
 
     // Mocking some related images for the vertical scroll
     const gallery = [

@@ -1,8 +1,19 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { IMAGES } from '../data'
 
 export default function AboutDetail() {
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') navigate('/')
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [navigate])
+
     return (
         <motion.main
             className="about-detail"

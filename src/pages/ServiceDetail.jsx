@@ -1,10 +1,20 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { SERVICES, IMAGES } from '../data'
 
 export default function ServiceDetail() {
     const { id } = useParams()
+    const navigate = useNavigate()
     const service = SERVICES.find(s => s.id === id) || SERVICES[0]
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') navigate('/')
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [navigate])
 
     return (
         <motion.main
