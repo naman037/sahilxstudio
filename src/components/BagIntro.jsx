@@ -1,333 +1,334 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IMAGES } from '../data'
 
-// All project images for the photo explosion
-const ALL_PHOTOS = [
+// All project images — duplicate to fill the sphere densely
+const BASE_PHOTOS = [
     ...IMAGES.raw,
     ...IMAGES.rebellion.slice(0, 4),
     ...IMAGES.borcelle,
 ]
+const ALL_PHOTOS = [...BASE_PHOTOS, ...BASE_PHOTOS.slice(0, 6)] // ~16 cards for density
 
 // ═══════════════════════════════════════════════
-// CAMERA BAG SVG
+// CONFIG
 // ═══════════════════════════════════════════════
-function CameraBagSVG({ hovered }) {
-    return (
-        <svg viewBox="0 0 320 280" fill="none" xmlns="http://www.w3.org/2000/svg" className="bag-svg">
-            {/* Bag shadow on floor */}
-            <ellipse cx="160" cy="268" rx="120" ry="10" fill="rgba(0,0,0,0.5)" />
+const SPHERE_RADIUS = 260
+const FOV = 700
+const TILT_X = -0.15 // slight top-down tilt for cinematic angle
 
-            {/* Bag body */}
-            <rect x="60" y="100" width="200" height="150" rx="12" fill="#1a1714" stroke="#2e2a24" strokeWidth="2" />
+// Pre-calculate Fibonacci sphere layout
+const SPHERE_POINTS = ALL_PHOTOS.map((_src, i) => {
+    const total = ALL_PHOTOS.length
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5))
+    const yNorm = 1 - (i / (total - 1)) * 2
+    const r = Math.sqrt(1 - yNorm * yNorm)
+    const baseTheta = goldenAngle * i
 
-            {/* Leather texture lines */}
-            <line x1="80" y1="120" x2="80" y2="240" stroke="#252119" strokeWidth="0.5" />
-            <line x1="240" y1="120" x2="240" y2="240" stroke="#252119" strokeWidth="0.5" />
+    // Random stagger delay for entrance
+    const staggerDelay = 200 + i * 80 + Math.random() * 200
 
-            {/* Front pocket */}
-            <rect x="90" y="155" width="140" height="75" rx="6" fill="#151210" stroke="#2a2620" strokeWidth="1.5" />
+    // Scatter direction for exit
+    const scatterX = (Math.random() - 0.5) * 1200
+    const scatterY = (Math.random() - 0.5) * 800
+    const scatterRot = (Math.random() - 0.5) * 90
 
-            {/* Pocket zipper */}
-            <line x1="100" y1="160" x2="220" y2="160" stroke="#3d3730" strokeWidth="1.5" strokeDasharray="3 2" />
-            <circle cx="218" cy="160" r="3" fill="#4a4238" />
+    return { yNorm, r, baseTheta, index: i, staggerDelay, scatterX, scatterY, scatterRot }
+})
 
-            {/* Top flap */}
-            <path d="M60 112 C60 95, 75 80, 95 78 L225 78 C245 80, 260 95, 260 112" fill="#1e1b16" stroke="#2e2a24" strokeWidth="2" />
+// 3D → 2D projection with rotation on two axes
+function project3D(pt, angleY, angleX) {
+    const theta = pt.baseTheta + angleY
 
-            {/* Flap stitching */}
-            <path d="M75 100 L245 100" stroke="#2a2620" strokeWidth="0.8" strokeDasharray="4 3" />
+    // Sphere coordinates
+    let x = Math.cos(theta) * pt.r * SPHERE_RADIUS
+    let y = pt.yNorm * SPHERE_RADIUS
+    let z = Math.sin(theta) * pt.r * SPHERE_RADIUS
 
-            {/* Main buckle / clasp */}
-            <rect x="140" y="90" width="40" height="18" rx="3" fill="#3d3730" stroke="#4a4238" strokeWidth="1" />
-            <rect x="155" y="93" width="10" height="12" rx="2" fill="#554d42" />
+    // Apply X-axis tilt (cinematic angle)
+    const cosX = Math.cos(angleX)
+    const sinX = Math.sin(angleX)
+    const y2 = y * cosX - z * sinX
+    const z2 = y * sinX + z * cosX
+    y = y2
+    z = z2
 
-            {/* Handle */}
-            <path d="M120 78 C120 55, 135 45, 160 45 C185 45, 200 55, 200 78" stroke="#2a2620" strokeWidth="6" strokeLinecap="round" fill="none" />
-            <path d="M120 78 C120 55, 135 45, 160 45 C185 45, 200 55, 200 78" stroke="#3d3730" strokeWidth="3" strokeLinecap="round" fill="none" />
-
-            {/* Side straps */}
-            <rect x="50" y="140" width="14" height="60" rx="3" fill="#1e1b16" stroke="#2e2a24" strokeWidth="1" />
-            <rect x="256" y="140" width="14" height="60" rx="3" fill="#1e1b16" stroke="#2e2a24" strokeWidth="1" />
-
-            {/* Strap buckles */}
-            <circle cx="57" cy="155" r="3" fill="#4a4238" stroke="#554d42" strokeWidth="0.5" />
-            <circle cx="263" cy="155" r="3" fill="#4a4238" stroke="#554d42" strokeWidth="0.5" />
-
-            {/* Brand label on bag */}
-            <rect x="135" y="175" width="50" height="20" rx="2" fill="#0d0b09" stroke="#2a2620" strokeWidth="0.5" />
-            <text x="160" y="189" textAnchor="middle" fill="#4a4238" fontSize="8" fontFamily="'Space Mono', monospace" letterSpacing="0.1em">SXS</text>
-
-            {/* Subtle shine on hovering */}
-            {hovered && (
-                <rect x="60" y="100" width="200" height="150" rx="12" fill="rgba(255,200,100,0.03)" />
-            )}
-        </svg>
-    )
+    // Perspective projection
+    const scale = FOV / (FOV + z)
+    return {
+        x: x * scale,
+        y: y * scale,
+        scale,
+        z,
+        depthNorm: (z + SPHERE_RADIUS) / (SPHERE_RADIUS * 2), // 0 = far, 1 = near
+    }
 }
 
 // ═══════════════════════════════════════════════
-// EQUIPMENT ITEMS (appear on hover)
-// ═══════════════════════════════════════════════
-const EQUIPMENT = [
-    {
-        id: 'camera',
-        label: 'Camera',
-        svg: (
-            <svg viewBox="0 0 80 56" fill="none">
-                <rect x="8" y="12" width="64" height="38" rx="5" fill="#1a1a1a" stroke="#333" strokeWidth="1.5" />
-                <rect x="30" y="5" width="20" height="10" rx="2" fill="#222" />
-                <circle cx="40" cy="31" r="14" fill="#111" stroke="#333" strokeWidth="1.5" />
-                <circle cx="40" cy="31" r="10" fill="#0a0a0a" stroke="#222" strokeWidth="1" />
-                <circle cx="40" cy="31" r="6" fill="#151520" />
-                <circle cx="37" cy="28" r="2.5" fill="rgba(150,200,255,0.3)" />
-                <circle cx="62" cy="14" r="3" fill="#333" />
-            </svg>
-        ),
-        x: -160, y: 30, rotation: -15, width: 80,
-    },
-    {
-        id: 'lens',
-        label: 'Lens',
-        svg: (
-            <svg viewBox="0 0 50 70" fill="none">
-                <rect x="5" y="0" width="40" height="65" rx="8" fill="#1a1a1a" stroke="#333" strokeWidth="1.5" />
-                <circle cx="25" cy="25" r="16" fill="#111" stroke="#2a2a2a" strokeWidth="1" />
-                <circle cx="25" cy="25" r="11" fill="#0a0a0a" />
-                <circle cx="25" cy="25" r="7" fill="#151520" />
-                <rect x="8" y="48" width="34" height="4" rx="1" fill="#252525" />
-                <rect x="8" y="55" width="34" height="3" rx="1" fill="#222" />
-            </svg>
-        ),
-        x: 165, y: 45, rotation: 25, width: 45,
-    },
-    {
-        id: 'tripod',
-        label: 'Tripod',
-        svg: (
-            <svg viewBox="0 0 60 90" fill="none">
-                <rect x="26" y="0" width="8" height="35" rx="2" fill="#222" stroke="#333" strokeWidth="1" />
-                <line x1="30" y1="35" x2="10" y2="88" stroke="#2a2a2a" strokeWidth="3" strokeLinecap="round" />
-                <line x1="30" y1="35" x2="30" y2="88" stroke="#2a2a2a" strokeWidth="3" strokeLinecap="round" />
-                <line x1="30" y1="35" x2="50" y2="88" stroke="#2a2a2a" strokeWidth="3" strokeLinecap="round" />
-                <circle cx="30" cy="35" r="4" fill="#333" />
-            </svg>
-        ),
-        x: -110, y: 10, rotation: -30, width: 50,
-    },
-    {
-        id: 'flash',
-        label: 'Flash',
-        svg: (
-            <svg viewBox="0 0 36 60" fill="none">
-                <rect x="6" y="20" width="24" height="38" rx="3" fill="#1a1a1a" stroke="#333" strokeWidth="1" />
-                <rect x="4" y="0" width="28" height="22" rx="3" fill="#222" stroke="#333" strokeWidth="1" />
-                <rect x="8" y="3" width="20" height="16" rx="2" fill="#ffe8c0" opacity="0.15" />
-                <rect x="14" y="55" width="8" height="5" rx="1" fill="#333" />
-            </svg>
-        ),
-        x: 120, y: 15, rotation: 12, width: 36,
-    },
-    {
-        id: 'filmroll',
-        label: 'Film',
-        svg: (
-            <svg viewBox="0 0 44 44" fill="none">
-                <circle cx="22" cy="22" r="20" fill="#1a1a1a" stroke="#333" strokeWidth="1.5" />
-                <circle cx="22" cy="22" r="8" fill="#111" stroke="#2a2a2a" strokeWidth="1" />
-                <circle cx="22" cy="22" r="3" fill="#333" />
-                {[0, 60, 120, 180, 240, 300].map((ang) => (
-                    <rect key={ang} x="20" y="2" width="4" height="6" rx="1" fill="#2a2a2a"
-                        transform={`rotate(${ang} 22 22)`} />
-                ))}
-            </svg>
-        ),
-        x: -70, y: 55, rotation: 0, width: 40,
-    },
-]
-
-// ═══════════════════════════════════════════════
-// FLYING PHOTO (polaroid-style card)
-// ═══════════════════════════════════════════════
-function FlyingPhoto({ src, index, total }) {
-    const angle = (index / total) * Math.PI * 2 + (Math.random() - 0.5) * 0.8
-    const distance = 200 + Math.random() * 350
-    const endX = Math.cos(angle) * distance
-    const endY = -Math.abs(Math.sin(angle) * distance) - 100 - Math.random() * 200
-    const rotation = (Math.random() - 0.5) * 60
-
-    return (
-        <motion.div
-            className="bag-photo"
-            initial={{ x: 0, y: 0, scale: 0, rotate: 0, opacity: 1 }}
-            animate={{
-                x: endX,
-                y: endY,
-                scale: 1,
-                rotate: rotation,
-                opacity: [1, 1, 1, 0],
-            }}
-            transition={{
-                duration: 1.8 + Math.random() * 0.6,
-                ease: [0.25, 0.46, 0.45, 0.94],
-                delay: index * 0.04,
-            }}
-        >
-            <img src={src} alt="" loading="eager" />
-        </motion.div>
-    )
-}
-
-// ═══════════════════════════════════════════════
-// BAG INTRO — MAIN COMPONENT
+// MAIN COMPONENT
 // ═══════════════════════════════════════════════
 export default function BagIntro({ onEnter }) {
-    const [hovered, setHovered] = useState(false)
-    const [clicked, setClicked] = useState(false)
-    const [zooming, setZooming] = useState(false)
-    const [exiting, setExiting] = useState(false)
-    const bagRef = useRef(null)
+    const [phase, setPhase] = useState('idle')
+    const [angleY, setAngleY] = useState(0)
+    const [elapsed, setElapsed] = useState(0)
+    const enterCalled = useRef(false)
+    const rafRef = useRef(null)
+    const startTime = useRef(null)
 
-    const handleClick = useCallback(() => {
-        if (clicked) return
-        setClicked(true)
+    // Phase timeline
+    useEffect(() => {
+        const t1 = setTimeout(() => setPhase('forming'), 400)
+        const t2 = setTimeout(() => setPhase('hero'), 3000)
+        const t3 = setTimeout(() => setPhase('exit'), 5000)
+        const t4 = setTimeout(() => {
+            if (!enterCalled.current) {
+                enterCalled.current = true
+                onEnter()
+            }
+        }, 6000)
 
-        // After photos explode, start zoom
-        setTimeout(() => setZooming(true), 1400)
+        return () => {
+            clearTimeout(t1)
+            clearTimeout(t2)
+            clearTimeout(t3)
+            clearTimeout(t4)
+        }
+    }, [onEnter])
 
-        // After zoom, exit
-        setTimeout(() => setExiting(true), 2200)
+    // Rotation animation with speed ramping
+    useEffect(() => {
+        if (phase !== 'forming' && phase !== 'hero' && phase !== 'exit') {
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            return
+        }
 
-        // Reveal main site
-        setTimeout(() => onEnter(), 2800)
-    }, [clicked, onEnter])
+        if (!startTime.current) startTime.current = performance.now()
+        let last = performance.now()
+
+        function tick(now) {
+            const dt = now - last
+            last = now
+            const totalElapsed = now - startTime.current
+
+            // Speed curve: accelerate in forming, decelerate in hero
+            let speed
+            if (phase === 'forming') {
+                // Ease-in: starts slow, builds up
+                const t = Math.min(totalElapsed / 2600, 1)
+                speed = 0.0003 + t * 0.0012
+            } else if (phase === 'hero') {
+                // Majestic slow rotation
+                speed = 0.0003
+            } else {
+                // Exit: speed up as it flies away
+                speed = 0.002
+            }
+
+            setAngleY(a => a + speed * dt)
+            setElapsed(totalElapsed)
+            rafRef.current = requestAnimationFrame(tick)
+        }
+        rafRef.current = requestAnimationFrame(tick)
+        return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+    }, [phase])
+
+    // Skip handler
+    const handleSkip = useCallback(() => {
+        if (phase === 'exit' || phase === 'done') return
+        setPhase('exit')
+        setTimeout(() => {
+            if (!enterCalled.current) {
+                enterCalled.current = true
+                onEnter()
+            }
+        }, 900)
+    }, [phase, onEnter])
+
+    const isActive = phase === 'forming' || phase === 'hero'
+    const isExiting = phase === 'exit'
+
+    // Dynamic X tilt — subtle breathing motion
+    const breathTilt = TILT_X + Math.sin(elapsed * 0.0008) * 0.05
+
+    // Particle configs — pre-computed for stable keys
+    const particles = useMemo(() =>
+        Array.from({ length: 30 }).map((_, i) => ({
+            left: `${5 + Math.random() * 90}%`,
+            top: `${5 + Math.random() * 90}%`,
+            size: 1 + Math.random() * 3,
+            duration: 3 + Math.random() * 5,
+            delay: Math.random() * 4,
+            drift: (Math.random() - 0.5) * 60,
+        })),
+        [])
 
     return (
         <AnimatePresence>
-            {!exiting && (
+            {phase !== 'done' && (
                 <motion.div
-                    className="bag-intro"
+                    className="sphere-intro"
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.6 }}
+                    onClick={handleSkip}
                 >
-                    {/* Spotlight beam */}
-                    <div className="bag-spotlight" />
+                    {/* Cinematic ambient gradient */}
+                    <div className="sphere-ambient" />
 
-                    {/* Subtle ambient particles */}
-                    <div className="bag-dust">
-                        {Array.from({ length: 15 }).map((_, i) => (
+                    {/* Volumetric light rays */}
+                    <div className="sphere-light-rays" style={{
+                        opacity: phase === 'hero' ? 0.12 : isActive ? 0.05 : 0,
+                    }} />
+
+                    {/* Enhanced floating particles */}
+                    <div className="sphere-dust">
+                        {particles.map((p, i) => (
                             <motion.div
                                 key={i}
-                                className="dust-particle"
+                                className="sphere-dust-particle"
                                 style={{
-                                    left: `${30 + Math.random() * 40}%`,
-                                    top: `${10 + Math.random() * 60}%`,
-                                    width: 1 + Math.random() * 2,
-                                    height: 1 + Math.random() * 2,
+                                    left: p.left,
+                                    top: p.top,
+                                    width: p.size,
+                                    height: p.size,
                                 }}
                                 animate={{
-                                    y: [0, -20 - Math.random() * 30, 0],
-                                    opacity: [0, 0.4, 0],
+                                    y: [0, -40 - p.drift, 0],
+                                    x: [0, p.drift * 0.3, 0],
+                                    opacity: [0, 0.6, 0],
+                                    scale: [0.5, 1, 0.5],
                                 }}
                                 transition={{
-                                    duration: 3 + Math.random() * 3,
-                                    delay: Math.random() * 3,
+                                    duration: p.duration,
+                                    delay: p.delay,
                                     repeat: Infinity,
+                                    ease: 'easeInOut',
                                 }}
                             />
                         ))}
                     </div>
 
-                    {/* Floor reflection line */}
-                    <div className="bag-floor-line" />
+                    {/* PULSING RADIAL GLOW — behind sphere */}
+                    <div
+                        className="sphere-glow"
+                        style={{
+                            opacity: phase === 'hero' ? 0.9 : isActive ? 0.3 : 0,
+                            transform: `translate(-50%, -50%) scale(${phase === 'hero' ? 1.3 : 1})`,
+                        }}
+                    />
+                    <div
+                        className="sphere-glow-pulse"
+                        style={{
+                            opacity: phase === 'hero' ? 0.5 : 0,
+                        }}
+                    />
 
-                    {/* Equipment items (hover reveal) */}
-                    <div className="bag-equipment-area">
-                        {EQUIPMENT.map((eq) => (
-                            <motion.div
-                                key={eq.id}
-                                className="bag-equipment-item"
-                                style={{
-                                    width: eq.width,
-                                    position: 'absolute',
-                                    left: `calc(50% + ${eq.x}px)`,
-                                    bottom: `${eq.y}px`,
-                                }}
-                                initial={{ opacity: 0, y: -40, rotate: 0, scale: 0.5 }}
-                                animate={hovered && !clicked ? {
-                                    opacity: 1,
-                                    y: 0,
-                                    rotate: eq.rotation,
-                                    scale: 1,
-                                } : {
-                                    opacity: 0,
-                                    y: -40,
-                                    rotate: 0,
-                                    scale: 0.5,
-                                }}
-                                transition={{
-                                    type: 'spring',
-                                    stiffness: 200,
-                                    damping: 15,
-                                    delay: hovered ? EQUIPMENT.indexOf(eq) * 0.08 : 0,
-                                }}
-                            >
-                                {eq.svg}
-                            </motion.div>
+                    {/* ORBITAL RINGS — more dramatic */}
+                    <div className="orbital-lines">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                            <div
+                                key={i}
+                                className={`orbital-ring orbital-ring-${i}`}
+                                style={{ opacity: isActive ? (phase === 'hero' ? 0.2 : 0.1) : 0 }}
+                            />
                         ))}
                     </div>
 
-                    {/* The Camera Bag */}
-                    <motion.div
-                        ref={bagRef}
-                        className="bag-container"
-                        onMouseEnter={() => !clicked && setHovered(true)}
-                        onMouseLeave={() => !clicked && setHovered(false)}
-                        onClick={handleClick}
-                        animate={zooming ? {
-                            scale: 15,
-                            opacity: 0,
-                        } : {
-                            scale: hovered ? 1.05 : 1,
-                        }}
-                        transition={zooming ? {
-                            duration: 0.8,
-                            ease: [0.76, 0, 0.24, 1],
-                        } : {
-                            type: 'spring',
-                            stiffness: 300,
-                            damping: 20,
+                    {/* ═══ THE IMAGE SPHERE ═══ */}
+                    <div
+                        className="sphere-stage"
+                        style={{
+                            opacity: isExiting ? 0 : isActive ? 1 : 0,
+                            transform: isExiting ? 'scale(3)' : isActive ? 'scale(1)' : 'scale(0.3)',
+                            transition: isExiting
+                                ? 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.76,0,0.24,1)'
+                                : 'opacity 1s ease, transform 1.5s cubic-bezier(0.16,1,0.3,1)',
                         }}
                     >
-                        <CameraBagSVG hovered={hovered} />
+                        {SPHERE_POINTS.map((pt) => {
+                            const proj = project3D(pt, angleY, breathTilt)
+                            const cardW = 110
+                            const cardH = 140
 
-                        {/* Click prompt */}
-                        <motion.div
-                            className="bag-click-hint"
-                            animate={{ opacity: hovered && !clicked ? 1 : 0 }}
-                            transition={{ duration: 0.3 }}
-                        >
-                            Click to Open
-                        </motion.div>
-                    </motion.div>
+                            // Depth-based effects
+                            const depthOpacity = 0.15 + proj.depthNorm * 0.85
+                            const depthBlur = proj.depthNorm < 0.3 ? (0.3 - proj.depthNorm) * 6 : 0
+                            const depthBrightness = 0.5 + proj.depthNorm * 0.5
 
-                    {/* Photo explosion */}
-                    {clicked && (
-                        <div className="bag-photos-container">
-                            {ALL_PHOTOS.map((src, i) => (
-                                <FlyingPhoto key={i} src={src} index={i} total={ALL_PHOTOS.length} />
-                            ))}
-                        </div>
-                    )}
+                            // Staggered entrance
+                            const hasAppeared = isActive && elapsed > pt.staggerDelay
+                            const appearProgress = isActive
+                                ? Math.min(1, Math.max(0, (elapsed - pt.staggerDelay) / 500))
+                                : 0
 
-                    {/* Bottom text */}
+                            // Exit scatter
+                            const exitProgress = isExiting ? Math.min(1, elapsed / 800) : 0
+
+                            let cardOpacity, cardTransform
+                            if (isExiting) {
+                                const ep = exitProgress
+                                cardOpacity = 1 - ep
+                                cardTransform = `scale(${proj.scale * (1 + ep * 2)}) rotate(${pt.scatterRot * ep}deg)`
+                            } else if (hasAppeared) {
+                                const bounce = 1 + Math.sin(appearProgress * Math.PI) * 0.15
+                                cardOpacity = depthOpacity * appearProgress
+                                cardTransform = `scale(${proj.scale * (appearProgress < 1 ? bounce : 1)})`
+                            } else {
+                                cardOpacity = 0
+                                cardTransform = `scale(${proj.scale * 0.3})`
+                            }
+
+                            return (
+                                <div
+                                    key={pt.index}
+                                    className="sphere-card"
+                                    style={{
+                                        width: cardW,
+                                        height: cardH,
+                                        left: `calc(50% + ${proj.x}px - ${cardW / 2}px)`,
+                                        top: `calc(50% + ${proj.y}px - ${cardH / 2}px)`,
+                                        transform: cardTransform,
+                                        zIndex: Math.round(proj.depthNorm * 100),
+                                        opacity: cardOpacity,
+                                        filter: depthBlur > 0.5
+                                            ? `blur(${depthBlur}px) brightness(${depthBrightness})`
+                                            : `brightness(${depthBrightness})`,
+                                    }}
+                                >
+                                    <img src={ALL_PHOTOS[pt.index]} alt="" loading="eager" />
+
+                                    {/* Front card shine effect */}
+                                    {proj.depthNorm > 0.75 && (
+                                        <div
+                                            className="sphere-card-shine"
+                                            style={{ opacity: (proj.depthNorm - 0.75) * 2 }}
+                                        />
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="sphere-progress-bar" style={{ opacity: isExiting ? 0 : 0.6 }}>
+                        <div
+                            className="sphere-progress-fill"
+                            style={{
+                                width: phase === 'idle' ? '0%'
+                                    : phase === 'forming' ? '50%'
+                                        : phase === 'hero' ? '90%'
+                                            : '100%'
+                            }}
+                        />
+                    </div>
+
+                    {/* Skip hint */}
                     <motion.div
-                        className="bag-bottom-text"
+                        className="sphere-skip-hint"
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: clicked ? 0 : 0.3 }}
-                        transition={{ duration: 0.8, delay: 0.5 }}
+                        animate={{ opacity: isExiting ? 0 : 0.25 }}
+                        transition={{ duration: 0.8, delay: 1.5 }}
                     >
-                        <span className="bag-brand">SAHIL<span style={{ color: 'var(--accent)' }}>×</span>STUDIOS</span>
+                        Click anywhere to skip
                     </motion.div>
                 </motion.div>
             )}

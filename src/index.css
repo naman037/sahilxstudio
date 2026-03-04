@@ -1270,71 +1270,297 @@ nav {
 }
 
 /* ═══════════════════════════════════════════════
-   BAG INTRO — INTERACTIVE LANDING
+   SPHERE INTRO — PREMIUM 3D ROTATING IMAGE GLOBE
    ═══════════════════════════════════════════════ */
-.bag-intro {
+.sphere-intro {
   position: fixed;
   inset: 0;
   z-index: 9500;
-  background: #050505;
+  background: #020202;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 12vh;
+  cursor: pointer;
   overflow: hidden;
 }
 
-.bag-spotlight {
+/* Cinematic ambient gradient — subtle warm tones */
+.sphere-ambient {
   position: absolute;
-  top: -30%;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(224, 48, 0, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 60% at 30% 60%, rgba(255, 140, 50, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 60% at 70% 40%, rgba(180, 100, 255, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  animation: ambientPulse 6s ease-in-out infinite;
+}
+
+@keyframes ambientPulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Volumetric light rays — rotating conic gradient */
+.sphere-light-rays {
+  position: absolute;
   left: 50%;
-  transform: translateX(-50%);
-  width: 500px;
-  height: 130%;
-  background: radial-gradient(ellipse 100% 100% at 50% 0%,
-      rgba(255, 235, 180, 0.08) 0%,
-      rgba(255, 220, 150, 0.04) 20%,
-      rgba(255, 200, 100, 0.015) 40%,
-      transparent 65%);
+  top: 50%;
+  width: 120vmax;
+  height: 120vmax;
+  margin-left: -60vmax;
+  margin-top: -60vmax;
+  background: conic-gradient(from 0deg,
+      transparent 0deg,
+      rgba(255, 180, 100, 0.03) 15deg,
+      transparent 30deg,
+      transparent 60deg,
+      rgba(255, 180, 100, 0.02) 75deg,
+      transparent 90deg,
+      transparent 120deg,
+      rgba(224, 48, 0, 0.03) 135deg,
+      transparent 150deg,
+      transparent 180deg,
+      rgba(255, 180, 100, 0.02) 195deg,
+      transparent 210deg,
+      transparent 240deg,
+      rgba(224, 48, 0, 0.02) 255deg,
+      transparent 270deg,
+      transparent 300deg,
+      rgba(255, 180, 100, 0.03) 315deg,
+      transparent 330deg,
+      transparent 360deg);
+  pointer-events: none;
+  transition: opacity 2s ease;
+  animation: lightRaysSpin 30s linear infinite;
+}
+
+@keyframes lightRaysSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Floating dust particles */
+.sphere-dust {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
   z-index: 1;
 }
 
-.bag-spotlight::after {
-  content: '';
+.sphere-dust-particle {
   position: absolute;
-  bottom: 20%;
+  background: radial-gradient(circle, rgba(255, 200, 150, 0.6), rgba(255, 200, 150, 0));
+  border-radius: 50%;
+}
+
+/* Progress bar */
+.sphere-progress-bar {
+  position: absolute;
+  bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
-  width: 260px;
-  height: 40px;
-  background: radial-gradient(ellipse, rgba(255, 230, 170, 0.06) 0%, transparent 70%);
-  border-radius: 50%;
-  filter: blur(12px);
+  width: 180px;
+  height: 2px;
+  background: rgba(240, 236, 228, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  z-index: 20;
+  transition: opacity 0.5s ease;
 }
 
-.bag-container {
-  position: relative;
-  z-index: 10;
-  width: 260px;
-  cursor: none;
-  transform-origin: center center;
+.sphere-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2, #ff6b00));
+  border-radius: 2px;
+  transition: width 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px rgba(224, 48, 0, 0.3);
 }
 
-.bag-svg {
-  width: 100%;
-  height: auto;
-  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
-  transition: filter 0.4s ease;
-}
-
-.bag-container:hover .bag-svg {
-  filter: drop-shadow(0 15px 40px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 20px rgba(255, 200, 100, 0.05));
-}
-
-.bag-click-hint {
+/* ── Sphere Stage ── */
+.sphere-stage {
   position: absolute;
-  bottom: -36px;
+  left: 50%;
+  top: 50%;
+  width: 700px;
+  height: 700px;
+  margin-left: -350px;
+  margin-top: -350px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Image cards ── */
+.sphere-card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0a0a0a;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+.sphere-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: contrast(1.1) saturate(0.85);
+}
+
+/* Card shine — reflective highlight on front-facing cards */
+.sphere-card-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      transparent 40%,
+      transparent 60%,
+      rgba(255, 255, 255, 0.04) 100%);
+  pointer-events: none;
+}
+
+/* ── Orbital ring decorations ── */
+.orbital-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.orbital-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid rgba(240, 236, 228, 0.04);
+  border-radius: 50%;
+  transition: opacity 1.5s ease;
+}
+
+.orbital-ring-0 {
+  width: 420px;
+  height: 420px;
+  margin-left: -210px;
+  margin-top: -210px;
+  animation: orbitalSpin 14s linear infinite;
+  border-color: rgba(224, 48, 0, 0.06);
+}
+
+.orbital-ring-1 {
+  width: 500px;
+  height: 500px;
+  margin-left: -250px;
+  margin-top: -250px;
+  animation: orbitalSpin 20s linear infinite reverse;
+  border-color: rgba(255, 180, 100, 0.04);
+}
+
+.orbital-ring-2 {
+  width: 340px;
+  height: 340px;
+  margin-left: -170px;
+  margin-top: -170px;
+  animation: orbitalSpin 10s linear infinite;
+  border-color: rgba(180, 100, 255, 0.04);
+}
+
+.orbital-ring-3 {
+  width: 580px;
+  height: 580px;
+  margin-left: -290px;
+  margin-top: -290px;
+  animation: orbitalSpin 25s linear infinite;
+  border-color: rgba(240, 236, 228, 0.03);
+}
+
+.orbital-ring-4 {
+  width: 280px;
+  height: 280px;
+  margin-left: -140px;
+  margin-top: -140px;
+  animation: orbitalSpin 8s linear infinite reverse;
+  border-color: rgba(224, 48, 0, 0.04);
+}
+
+@keyframes orbitalSpin {
+  0% {
+    transform: rotateX(70deg) rotateZ(0deg);
+  }
+
+  100% {
+    transform: rotateX(70deg) rotateZ(360deg);
+  }
+}
+
+/* Primary radial glow */
+.sphere-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 600px;
+  height: 600px;
+  margin-left: -300px;
+  margin-top: -300px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(224, 48, 0, 0.12) 0%, rgba(255, 100, 50, 0.06) 25%, transparent 60%);
+  pointer-events: none;
+  transition: opacity 1.5s ease, transform 1.5s ease;
+}
+
+/* Secondary pulsing glow */
+.sphere-glow-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 500px;
+  height: 500px;
+  margin-left: -250px;
+  margin-top: -250px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(224, 48, 0, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  transition: opacity 1.5s ease;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
+}
+
+/* Skip hint */
+.sphere-skip-hint {
+  position: absolute;
+  bottom: 6%;
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-mono);
@@ -1342,85 +1568,8 @@ nav {
   letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--off-white);
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.bag-floor-line {
-  position: absolute;
-  bottom: 11.5vh;
-  left: 20%;
-  right: 20%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.04), transparent);
-  z-index: 2;
-}
-
-.bag-equipment-area {
-  position: absolute;
-  bottom: 12vh;
-  left: 0;
-  right: 0;
-  height: 200px;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.bag-equipment-item {
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
-}
-
-.bag-photos-container {
-  position: absolute;
-  left: 50%;
-  bottom: calc(12vh + 120px);
   z-index: 20;
   pointer-events: none;
-}
-
-.bag-photo {
-  position: absolute;
-  width: 120px;
-  background: #f0ece4;
-  padding: 6px 6px 24px 6px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-}
-
-.bag-photo img {
-  width: 100%;
-  height: 90px;
-  object-fit: cover;
-  display: block;
-}
-
-.bag-dust {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.dust-particle {
-  position: absolute;
-  background: rgba(255, 230, 170, 0.4);
-  border-radius: 50%;
-}
-
-.bag-bottom-text {
-  position: absolute;
-  bottom: 4vh;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  text-align: center;
-}
-
-.bag-brand {
-  font-family: var(--font-display);
-  font-size: 14px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--white);
 }
 
 /* ═══════════════════════════════════════════════
