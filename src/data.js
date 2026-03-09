@@ -13,12 +13,12 @@ export const IMAGES = {
     'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/5ed1e6222340111.67e41656e112e.png',
   ],
   rebellion: [
-    'https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/c47792222318883.67e3d454b1fec.png',
-    'https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/fc0603222318883.67e3d456358f0.png',
-    'https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/13bb7d222318883.67e3d4583116c.png',
-    'https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/1c4f81222318883.67e3d45a38c4e.png',
-    'https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/693847222318883.67e3d45c9d0e6.png',
-    'https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/125c25222318883.67e3d45e107a3.png',
+    'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/c47792222318883.67e3d454b1fec.png',
+    'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/fc0603222318883.67e3d456358f0.png',
+    'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/13bb7d222318883.67e3d4583116c.png',
+    'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/1c4f81222318883.67e3d45a38c4e.png',
+    'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/693847222318883.67e3d45c9d0e6.png',
+    'https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/125c25222318883.67e3d45e107a3.png',
   ],
 }
 

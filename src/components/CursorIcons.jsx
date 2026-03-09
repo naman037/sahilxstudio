@@ -1,5 +1,3 @@
-import React from 'react'
-
 export const CursorDefault = ({ size = 64 }) => (
     <svg
         width={size}
@@ -7,13 +5,7 @@ export const CursorDefault = ({ size = 64 }) => (
         viewBox="0 0 100 100"
         style={{ fill: 'var(--white)', pointerEvents: 'none' }}
     >
-        <defs>
-            <filter id="scribble-default" x="-20%" y="-20%" width="140%" height="140%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="4" result="noise" />
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-        </defs>
-        <g filter="url(#scribble-default)">
+        <g>
             {/* Body */}
             <polygon points="38,40 62,40 58,75 42,75" />
             {/* Head */}
@@ -33,13 +25,7 @@ export const CursorHover = ({ size = 72 }) => (
         viewBox="0 0 100 100"
         style={{ fill: 'var(--white)', pointerEvents: 'none' }}
     >
-        <defs>
-            <filter id="scribble-hover" x="-20%" y="-20%" width="140%" height="140%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="4" result="noise" />
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
-        </defs>
-        <g filter="url(#scribble-hover)">
+        <g>
             {/* Body */}
             <polygon points="38,40 62,40 58,75 42,75" />
             {/* Head */}

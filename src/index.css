@@ -42,98 +42,36 @@ button {
   cursor: none;
 }
 
-/* CUSTOM CURSOR */
-#cursor-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--white);
-  border-radius: 50%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  mix-blend-mode: difference;
-  transition: transform 0.1s ease, width 0.3s ease, height 0.3s ease;
-}
 
-#cursor-ring {
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(240, 236, 228, 0.6);
-  border-radius: 50%;
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%, -50%);
-  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, background 0.3s ease;
-}
 
-#cursor-ring.hovering {
-  width: 80px;
-  height: 80px;
-  border-color: var(--accent);
-  background: rgba(224, 48, 0, 0.05);
-}
-
-/* GRAIN OVERLAY */
+/* GRAIN OVERLAY — lightweight static noise */
 .grain-overlay {
   position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.035;
+  inset: 0;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXWBgYGHh4d5eXlzc3Oelieli eli0NLS0teli1NTU1eli2NjY2eli3ODg4eli4ODg4eli5eXl5eli6enp6eli7e3t7eAAAAeli0aHKSAAAAF3RSTlNAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEAF8UoLAAAAX0lEQVR42u3RMQoAIAxE0f+/WJGZRQXFYsX7VzYWsYiI/GE8x5yU0jnnGGOMMa211lpr7X1VVdXe+5xzzjln733OOeeca621tnfvvffee++9954xRkQYY0RE/oge+QJ+ACt6FQmzswMpAAAAAElFTkSuQmCC");
+  background-repeat: repeat;
+  opacity: 0.04;
   pointer-events: none;
   z-index: 9990;
-  animation: grain 0.4s steps(1) infinite;
+  animation: grain 1s steps(4) infinite;
+  will-change: transform;
 }
 
 @keyframes grain {
-
-  0%,
-  100% {
+  0% {
     transform: translate(0, 0);
   }
 
-  10% {
-    transform: translate(-5%, -5%);
-  }
-
-  20% {
-    transform: translate(-10%, 5%);
-  }
-
-  30% {
-    transform: translate(5%, -10%);
-  }
-
-  40% {
-    transform: translate(-5%, 15%);
+  25% {
+    transform: translate(-2%, -3%);
   }
 
   50% {
-    transform: translate(-10%, 5%);
+    transform: translate(3%, 2%);
   }
 
-  60% {
-    transform: translate(15%, 0);
-  }
-
-  70% {
-    transform: translate(0, 10%);
-  }
-
-  80% {
-    transform: translate(-15%, 0);
-  }
-
-  90% {
-    transform: translate(10%, 5%);
+  75% {
+    transform: translate(-3%, 1%);
   }
 }
 

@@ -22,17 +22,20 @@ function Layout({ children }) {
       smoothWheel: true,
     })
 
+    let rafId
     const raf = (time) => {
       lenis.raf(time)
-      requestAnimationFrame(raf)
+      rafId = requestAnimationFrame(raf)
     }
-    requestAnimationFrame(raf)
-    return () => lenis.destroy()
+    rafId = requestAnimationFrame(raf)
+    return () => {
+      cancelAnimationFrame(rafId)
+      lenis.destroy()
+    }
   }, [])
 
   return (
     <>
-      <div className="grain-overlay" />
       <CustomCursor />
       {children}
     </>

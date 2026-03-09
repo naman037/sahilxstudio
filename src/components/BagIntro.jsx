@@ -69,11 +69,14 @@ function project3D(pt, angleY, angleX) {
 // ═══════════════════════════════════════════════
 export default function BagIntro({ onEnter }) {
     const [phase, setPhase] = useState('idle')
-    const [angleY, setAngleY] = useState(0)
-    const [elapsed, setElapsed] = useState(0)
+    // USE REFS instead of state to avoid React re-renders every frame
+    const angleYRef = useRef(0)
+    const elapsedRef = useRef(0)
     const enterCalled = useRef(false)
     const rafRef = useRef(null)
     const startTime = useRef(null)
+    const stageRef = useRef(null)
+    const cardRefs = useRef([])
 
     // Phase timeline
     useEffect(() => {
@@ -95,7 +98,7 @@ export default function BagIntro({ onEnter }) {
         }
     }, [onEnter])
 
-    // Rotation animation with speed ramping
+    // Rotation animation — DIRECT DOM UPDATES, no React re-renders
     useEffect(() => {
         if (phase !== 'forming' && phase !== 'hero' && phase !== 'exit') {
             if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -109,23 +112,94 @@ export default function BagIntro({ onEnter }) {
             const dt = now - last
             last = now
             const totalElapsed = now - startTime.current
+            elapsedRef.current = totalElapsed
 
             // Speed curve: accelerate in forming, decelerate in hero
             let speed
             if (phase === 'forming') {
-                // Ease-in: starts slow, builds up
                 const t = Math.min(totalElapsed / 2600, 1)
                 speed = 0.0003 + t * 0.0012
             } else if (phase === 'hero') {
-                // Majestic slow rotation
                 speed = 0.0003
             } else {
-                // Exit: speed up as it flies away
                 speed = 0.002
             }
 
-            setAngleY(a => a + speed * dt)
-            setElapsed(totalElapsed)
+            angleYRef.current += speed * dt
+
+            // Dynamic X tilt — subtle breathing motion
+            const breathTilt = TILT_X + Math.sin(totalElapsed * 0.0008) * 0.05
+            const isActive = phase === 'forming' || phase === 'hero'
+            const isExiting = phase === 'exit'
+
+            // Update stage container
+            if (stageRef.current) {
+                if (isExiting) {
+                    stageRef.current.style.opacity = '0'
+                    stageRef.current.style.transform = 'scale(3)'
+                    stageRef.current.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.76,0,0.24,1)'
+                } else if (isActive) {
+                    stageRef.current.style.opacity = '1'
+                    stageRef.current.style.transform = 'scale(1)'
+                    stageRef.current.style.transition = 'opacity 1s ease, transform 1.5s cubic-bezier(0.16,1,0.3,1)'
+                }
+            }
+
+            // Update each card via direct DOM manipulation
+            const cardW = 110
+            const cardH = 140
+            for (let idx = 0; idx < SPHERE_POINTS.length; idx++) {
+                const el = cardRefs.current[idx]
+                if (!el) continue
+
+                const pt = SPHERE_POINTS[idx]
+                const proj = project3D(pt, angleYRef.current, breathTilt)
+
+                // Depth-based effects
+                const depthOpacity = 0.15 + proj.depthNorm * 0.85
+                const depthBlur = proj.depthNorm < 0.3 ? (0.3 - proj.depthNorm) * 6 : 0
+                const depthBrightness = 0.5 + proj.depthNorm * 0.5
+
+                // Staggered entrance
+                const hasAppeared = isActive && totalElapsed > pt.staggerDelay
+                const appearProgress = isActive
+                    ? Math.min(1, Math.max(0, (totalElapsed - pt.staggerDelay) / 500))
+                    : 0
+
+                // Exit scatter
+                const exitProgress = isExiting ? Math.min(1, totalElapsed / 800) : 0
+
+                let cardOpacity, cardTransform
+                if (isExiting) {
+                    const ep = exitProgress
+                    cardOpacity = 1 - ep
+                    cardTransform = `scale(${proj.scale * (1 + ep * 2)}) rotate(${pt.scatterRot * ep}deg)`
+                } else if (hasAppeared) {
+                    const bounce = 1 + Math.sin(appearProgress * Math.PI) * 0.15
+                    cardOpacity = depthOpacity * appearProgress
+                    cardTransform = `scale(${proj.scale * (appearProgress < 1 ? bounce : 1)})`
+                } else {
+                    cardOpacity = 0
+                    cardTransform = `scale(${proj.scale * 0.3})`
+                }
+
+                el.style.left = `calc(50% + ${proj.x}px - ${cardW / 2}px)`
+                el.style.top = `calc(50% + ${proj.y}px - ${cardH / 2}px)`
+                el.style.transform = cardTransform
+                el.style.zIndex = Math.round(proj.depthNorm * 100)
+                el.style.opacity = cardOpacity
+                el.style.filter = depthBlur > 0.5
+                    ? `blur(${depthBlur}px) brightness(${depthBrightness})`
+                    : `brightness(${depthBrightness})`
+
+                // Shine element
+                const shine = el.querySelector('.sphere-card-shine')
+                if (shine) {
+                    shine.style.opacity = proj.depthNorm > 0.75 ? (proj.depthNorm - 0.75) * 2 : 0
+                    shine.style.display = proj.depthNorm > 0.75 ? '' : 'none'
+                }
+            }
+
             rafRef.current = requestAnimationFrame(tick)
         }
         rafRef.current = requestAnimationFrame(tick)
@@ -147,12 +221,9 @@ export default function BagIntro({ onEnter }) {
     const isActive = phase === 'forming' || phase === 'hero'
     const isExiting = phase === 'exit'
 
-    // Dynamic X tilt — subtle breathing motion
-    const breathTilt = TILT_X + Math.sin(elapsed * 0.0008) * 0.05
-
     // Particle configs — pre-computed for stable keys
     const particles = useMemo(() =>
-        Array.from({ length: 30 }).map((_, i) => ({
+        Array.from({ length: 20 }).map((_, i) => ({
             left: `${5 + Math.random() * 90}%`,
             top: `${5 + Math.random() * 90}%`,
             size: 1 + Math.random() * 3,
@@ -179,7 +250,7 @@ export default function BagIntro({ onEnter }) {
                         opacity: phase === 'hero' ? 0.12 : isActive ? 0.05 : 0,
                     }} />
 
-                    {/* Enhanced floating particles */}
+                    {/* Enhanced floating particles — reduced from 30 to 20 */}
                     <div className="sphere-dust">
                         {particles.map((p, i) => (
                             <motion.div
@@ -222,7 +293,7 @@ export default function BagIntro({ onEnter }) {
                         }}
                     />
 
-                    {/* ORBITAL RINGS — more dramatic */}
+                    {/* ORBITAL RINGS */}
                     <div className="orbital-lines">
                         {[0, 1, 2, 3, 4].map((i) => (
                             <div
@@ -235,6 +306,7 @@ export default function BagIntro({ onEnter }) {
 
                     {/* ═══ THE IMAGE SPHERE ═══ */}
                     <div
+                        ref={stageRef}
                         className="sphere-stage"
                         style={{
                             opacity: isExiting ? 0 : isActive ? 1 : 0,
@@ -244,68 +316,21 @@ export default function BagIntro({ onEnter }) {
                                 : 'opacity 1s ease, transform 1.5s cubic-bezier(0.16,1,0.3,1)',
                         }}
                     >
-                        {SPHERE_POINTS.map((pt) => {
-                            const proj = project3D(pt, angleY, breathTilt)
-                            const cardW = 110
-                            const cardH = 140
-
-                            // Depth-based effects
-                            const depthOpacity = 0.15 + proj.depthNorm * 0.85
-                            const depthBlur = proj.depthNorm < 0.3 ? (0.3 - proj.depthNorm) * 6 : 0
-                            const depthBrightness = 0.5 + proj.depthNorm * 0.5
-
-                            // Staggered entrance
-                            const hasAppeared = isActive && elapsed > pt.staggerDelay
-                            const appearProgress = isActive
-                                ? Math.min(1, Math.max(0, (elapsed - pt.staggerDelay) / 500))
-                                : 0
-
-                            // Exit scatter
-                            const exitProgress = isExiting ? Math.min(1, elapsed / 800) : 0
-
-                            let cardOpacity, cardTransform
-                            if (isExiting) {
-                                const ep = exitProgress
-                                cardOpacity = 1 - ep
-                                cardTransform = `scale(${proj.scale * (1 + ep * 2)}) rotate(${pt.scatterRot * ep}deg)`
-                            } else if (hasAppeared) {
-                                const bounce = 1 + Math.sin(appearProgress * Math.PI) * 0.15
-                                cardOpacity = depthOpacity * appearProgress
-                                cardTransform = `scale(${proj.scale * (appearProgress < 1 ? bounce : 1)})`
-                            } else {
-                                cardOpacity = 0
-                                cardTransform = `scale(${proj.scale * 0.3})`
-                            }
-
-                            return (
-                                <div
-                                    key={pt.index}
-                                    className="sphere-card"
-                                    style={{
-                                        width: cardW,
-                                        height: cardH,
-                                        left: `calc(50% + ${proj.x}px - ${cardW / 2}px)`,
-                                        top: `calc(50% + ${proj.y}px - ${cardH / 2}px)`,
-                                        transform: cardTransform,
-                                        zIndex: Math.round(proj.depthNorm * 100),
-                                        opacity: cardOpacity,
-                                        filter: depthBlur > 0.5
-                                            ? `blur(${depthBlur}px) brightness(${depthBrightness})`
-                                            : `brightness(${depthBrightness})`,
-                                    }}
-                                >
-                                    <img src={ALL_PHOTOS[pt.index]} alt="" loading="eager" />
-
-                                    {/* Front card shine effect */}
-                                    {proj.depthNorm > 0.75 && (
-                                        <div
-                                            className="sphere-card-shine"
-                                            style={{ opacity: (proj.depthNorm - 0.75) * 2 }}
-                                        />
-                                    )}
-                                </div>
-                            )
-                        })}
+                        {SPHERE_POINTS.map((pt) => (
+                            <div
+                                key={pt.index}
+                                ref={(el) => { cardRefs.current[pt.index] = el }}
+                                className="sphere-card"
+                                style={{
+                                    width: 110,
+                                    height: 140,
+                                    opacity: 0,
+                                }}
+                            >
+                                <img src={ALL_PHOTOS[pt.index]} alt="" loading="eager" />
+                                <div className="sphere-card-shine" style={{ display: 'none' }} />
+                            </div>
+                        ))}
                     </div>
 
                     {/* Progress bar */}
